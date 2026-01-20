@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import Nav from "./nav";
 
 export const metadata: Metadata = {
-  title: "Learning Machine",
-  description: "AI 智能學習機"
+  title: "AI 智能學習機",
+  description: "AI 智能學習機（全新重建骨架）"
 };
 
 export default function RootLayout({
@@ -20,6 +21,7 @@ export default function RootLayout({
           background: "#fafafa"
         }}
       >
+        <Nav />
         {children}
       </body>
     </html>
