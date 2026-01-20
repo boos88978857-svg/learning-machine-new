@@ -34,10 +34,10 @@ export default function PracticeDebugPage() {
     setMsg(`已建立 ${subject} 測試進度（回到學習區可看到「繼續/清除」）`);
   }
 
-  function clear(subject: Subject) {
-    clearSession(subject);
-    setMsg(`已清除 ${subject} 進度`);
-  }
+function clear() {
+  clearAllSessions();
+  setMsg("已清除所有進度");
+}
 
   return (
     <main style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
