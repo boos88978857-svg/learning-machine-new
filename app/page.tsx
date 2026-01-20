@@ -1,44 +1,81 @@
+import Link from "next/link";
+
+const cardStyle: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #e5e5e5",
+  borderRadius: 16,
+  padding: 18
+};
+
+const titleStyle: React.CSSProperties = {
+  margin: "0 0 8px",
+  fontSize: 20,
+  fontWeight: 900
+};
+
+const descStyle: React.CSSProperties = {
+  margin: 0,
+  opacity: 0.75,
+  lineHeight: 1.7
+};
+
+const btnStyle: React.CSSProperties = {
+  display: "inline-block",
+  marginTop: 14,
+  padding: "10px 14px",
+  borderRadius: 14,
+  border: "1px solid #111",
+  background: "#111",
+  color: "#fff",
+  fontWeight: 900,
+  textDecoration: "none"
+};
+
 export default function HomePage() {
   return (
-    <main
-      style={{
-        maxWidth: 960,
-        margin: "0 auto",
-        padding: "24px 16px"
-      }}
-    >
-      <h1
-        style={{
-          fontSize: 36,
-          fontWeight: 900,
-          marginBottom: 24
-        }}
-      >
+    <main style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
+      <h1 style={{ fontSize: 36, fontWeight: 900, margin: "0 0 18px" }}>
         AI 智能學習機
       </h1>
 
       <div
         style={{
-          background: "#ffffff",
-          borderRadius: 16,
-          padding: 20,
-          border: "1px solid #e5e5e5"
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 16
         }}
       >
-        <p style={{ lineHeight: 1.7 }}>
-          歡迎使用 AI 智能學習機。<br />
-          這是一個全新重建的專案骨架，目前僅確認：
-        </p>
+        <div style={cardStyle}>
+          <h2 style={titleStyle}>英文專區</h2>
+          <p style={descStyle}>分級學習 + 練習（A1~C2、TOEIC）</p>
+          <Link href="/english" style={btnStyle}>
+            進入 →
+          </Link>
+        </div>
 
-        <ul style={{ lineHeight: 1.8 }}>
-          <li>專案可以正常建置（build）</li>
-          <li>首頁可以正常顯示</li>
-          <li>後續可逐步加入學習、練習與續做功能</li>
-        </ul>
+        <div style={cardStyle}>
+          <h2 style={titleStyle}>數學專區</h2>
+          <p style={descStyle}>國小 / 國中 / 高中 分級練習</p>
+          <Link href="/math" style={btnStyle}>
+            進入 →
+          </Link>
+        </div>
 
-        <p style={{ marginTop: 16, opacity: 0.7 }}>
-          下一步將加入「上方導覽列」與其他頁面入口。
-        </p>
+        <div style={cardStyle}>
+          <h2 style={titleStyle}>其他學科</h2>
+          <p style={descStyle}>後續擴充入口（不觸犯版權、題庫自研）</p>
+          <Link href="/other" style={btnStyle}>
+            進入 →
+          </Link>
+        </div>
+
+        <div style={cardStyle}>
+          <h2 style={titleStyle}>學習競技場</h2>
+          <p style={descStyle}>闖關 / 排行 / 成就（後續擴充）</p>
+          <Link href="/arena" style={btnStyle}>
+            進入 →
+          </Link>
+        </div>
       </div>
     </main>
   );
