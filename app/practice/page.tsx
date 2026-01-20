@@ -109,9 +109,6 @@ export default function PracticeHubPage() {
                 </span>
                 <span style={pill}>⏱ {formatTime(s.elapsedSec)}</span>
                 <span style={pill}>
-                  對：{s.correctCount} / 錯：{s.wrongCount}
-                </span>
-                <span style={pill}>
                   提示：{s.hintLimit}/{s.hintUsed}
                 </span>
                 <span style={pill}>{s.paused ? "已暫停" : "進行中"}</span>
