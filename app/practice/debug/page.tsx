@@ -30,7 +30,6 @@ export default function PracticeDebugPage() {
     s.currentIndex = 5; // 第 6 题
     s.elapsedSec = 125; // 02:05
     s.hintUsed = 1;
-    s.paused = false;
     upsertSession(s);
     setMsg(`已建立 ${subject} 測試進度（回到學習區可看到「繼續/清除」）`);
   }
