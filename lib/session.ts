@@ -1,5 +1,5 @@
 // /lib/session.ts
-export type Subject = "英文" | "数学" | "其他";
+export type Subject = "英文" | "數學" | "其他";
 
 export type SessionStatus = "in_progress" | "done";
 
