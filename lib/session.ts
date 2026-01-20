@@ -1,228 +1,120 @@
-// /lib/session.ts
-// ✅ 纯前端 localStorage 版本：支持多科目“做到一半”并可继续/清除
-// ✅ 避免 next export/prerender 问题：只在 client 中调用（本文件本身不含 window 访问）
+// lib/session.ts
+// ✅ 全站唯一 Session 数据源（localStorage）
+// ✅ 所有页面只能从这里 import
 
-export type Subject = "英语" | "数学" | "其他";
+export type Subject = "math" | "english" | "other";
 
-export type QuestionType = "true_false" | "choice" | "application";
-
-export type Choice = { id: string; text: string; correct?: boolean };
+export type Choice = {
+  id: string;
+  text: string;
+};
 
 export type Question = {
   id: string;
-  subject: Subject;
-  type: QuestionType;
-  prompt: string;
-  hint?: string;
-  choices?: Choice[]; // true_false / choice 会用
+  title: string;
+  choices?: Choice[];
+  answer?: string;
 };
 
 export type PracticeSession = {
   id: string;
   subject: Subject;
-
-  // 进度
-  currentIndex: number;
-  totalQuestions: number;
-
-  // 统计
-  correctCount: number;
-  wrongCount: number;
-
-  // 提示（你要 3 次：3/1, 3/2, 3/3）
-  hintLimit: number; // 固定 3
-  hintUsed: number;  // 已用几次
-
-  // 状态
-  paused: boolean;
-  startedAt: number;     // ms
-  elapsedSec: number;    // 计时（秒）
-  updatedAt: number;     // ms
-
-  // 题目（先用 mock，之后可替换成题库系统）
   questions: Question[];
+  currentIndex: number;
+  answers: Record<string, string>;
+  hintUsed: number;
+  hintLimit: number;
+  completed: boolean;
+  createdAt: number;
+  updatedAt: number;
 };
 
-const LS_KEY = "lm_sessions_v1";
-const LS_ACTIVE = "lm_active_session_v1";
+const STORAGE_KEY = "__learning_machine_sessions__";
+const ACTIVE_KEY = "__learning_machine_active_session__";
 
-function now() {
-  return Date.now();
-}
+/* ================= 基础工具 ================= */
 
-function safeParse<T>(raw: string | null, fallback: T): T {
+function readAll(): PracticeSession[] {
+  if (typeof window === "undefined") return [];
   try {
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   } catch {
-    return fallback;
+    return [];
   }
 }
 
-function readAll(): Record<string, PracticeSession> {
-  if (typeof window === "undefined") return {};
-  return safeParse<Record<string, PracticeSession>>(
-    window.localStorage.getItem(LS_KEY),
-    {}
-  );
-}
-
-function writeAll(map: Record<string, PracticeSession>) {
+function writeAll(list: PracticeSession[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(LS_KEY, JSON.stringify(map));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
-export function listInProgressSessions(): PracticeSession[] {
-  const map = readAll();
-  const all = Object.values(map);
-  // 未完成：currentIndex < totalQuestions
-  return all
-    .filter((s) => s.currentIndex < s.totalQuestions)
-    .sort((a, b) => b.updatedAt - a.updatedAt);
-}
+/* ================= 核心 API（必须 export） ================= */
 
-export function getSession(id: string): PracticeSession | null {
-  const map = readAll();
-  return map[id] ?? null;
-}
-
-export function upsertSession(s: PracticeSession) {
-  const map = readAll();
-  map[s.id] = { ...s, updatedAt: now() };
-  writeAll(map);
-}
-
-export function removeSession(id: string) {
-  const map = readAll();
-  delete map[id];
-  writeAll(map);
-
-  // 若删的是 active，也清掉
-  if (typeof window !== "undefined") {
-    const active = window.localStorage.getItem(LS_ACTIVE);
-    if (active === id) window.localStorage.removeItem(LS_ACTIVE);
-  }
-}
-
-export function clearAllSessions() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(LS_KEY);
-  window.localStorage.removeItem(LS_ACTIVE);
-}
-
-export function setActiveSessionId(id: string | null) {
-  if (typeof window === "undefined") return;
-  if (!id) window.localStorage.removeItem(LS_ACTIVE);
-  else window.localStorage.setItem(LS_ACTIVE, id);
-}
-
-export function getActiveSessionId(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(LS_ACTIVE);
-}
-
-/** ✅ 先用 mock 题目（之后你接题库系统就替换这里） */
-function buildMockQuestions(subject: Subject, total: number): Question[] {
-  const base: Question[] = [];
-
-  // 每科至少给三种题型做兼容示范
-  base.push({
-    id: `${subject}-tf-1`,
-    subject,
-    type: "true_false",
-    prompt: subject === "英语" ? "True/False：'Apple' 是水果。" : "判断题：2+2=4",
-    hint: "想想常识或基础计算",
-    choices: [
-      { id: "T", text: "对", correct: true },
-      { id: "F", text: "错", correct: false },
-    ],
-  });
-
-  base.push({
-    id: `${subject}-ch-1`,
-    subject,
-    type: "choice",
-    prompt: subject === "英语" ? "选择题：'book' 中文是？" : "选择题：9÷3=?",
-    hint: "排除法",
-    choices:
-      subject === "英语"
-        ? [
-            { id: "A", text: "书", correct: true },
-            { id: "B", text: "桌子" },
-            { id: "C", text: "天空" },
-            { id: "D", text: "河流" },
-          ]
-        : [
-            { id: "A", text: "2" },
-            { id: "B", text: "3", correct: true },
-            { id: "C", text: "4" },
-            { id: "D", text: "5" },
-          ],
-  });
-
-  base.push({
-    id: `${subject}-app-1`,
-    subject,
-    type: "application",
-    prompt:
-      subject === "英语"
-        ? "应用题：用英文写出「我喜欢学习」。"
-        : "应用题：小明有 12 颗糖，平均分给 3 个朋友，每人几颗？",
-    hint: subject === "英语" ? "I like ..." : "除法 12÷3",
-  });
-
-  // 不够就补 choice
-  let i = 2;
-  while (base.length < total) {
-    base.push({
-      id: `${subject}-ch-${i}`,
-      subject,
-      type: "choice",
-      prompt: subject === "英语" ? `选择题 ${i}：A,B,C 哪个是字母？` : `选择题 ${i}：${i}+${i}=?`,
-      hint: "先想最简单的",
-      choices:
-        subject === "英语"
-          ? [
-              { id: "A", text: "A", correct: true },
-              { id: "B", text: "苹果" },
-              { id: "C", text: "桌子" },
-              { id: "D", text: "跑步" },
-            ]
-          : [
-              { id: "A", text: String(i * 2), correct: true },
-              { id: "B", text: String(i * 2 + 1) },
-              { id: "C", text: String(i * 2 - 1) },
-              { id: "D", text: String(i * 2 + 2) },
-            ],
-    });
-    i++;
-  }
-
-  return base.slice(0, total);
-}
-
-export function newSession(subject: Subject, totalQuestions = 20): PracticeSession {
-  const id = `${subject}-${Math.random().toString(36).slice(2, 10)}-${Date.now()
-    .toString(36)
-    .slice(2, 8)}`;
-
+/** 建立新回合 */
+export function newSession(subject: Subject, questions: Question[]): PracticeSession {
+  const now = Date.now();
   const s: PracticeSession = {
-    id,
+    id: `${subject}-${now}`,
     subject,
+    questions,
     currentIndex: 0,
-    totalQuestions,
-    correctCount: 0,
-    wrongCount: 0,
-    hintLimit: 3,
+    answers: {},
     hintUsed: 0,
-    paused: false,
-    startedAt: now(),
-    elapsedSec: 0,
-    updatedAt: now(),
-    questions: buildMockQuestions(subject, totalQuestions),
+    hintLimit: 3,
+    completed: false,
+    createdAt: now,
+    updatedAt: now
   };
 
-  upsertSession(s);
-  setActiveSessionId(id);
+  const all = readAll();
+  all.push(s);
+  writeAll(all);
+  setActiveSessionId(s.id);
   return s;
+}
+
+/** 读取单一 session */
+export function getSession(id: string): PracticeSession | null {
+  return readAll().find(s => s.id === id) ?? null;
+}
+
+/** 更新 / 写回 session */
+export function upsertSession(session: PracticeSession) {
+  const all = readAll();
+  const idx = all.findIndex(s => s.id === session.id);
+  if (idx >= 0) {
+    all[idx] = { ...session, updatedAt: Date.now() };
+  } else {
+    all.push(session);
+  }
+  writeAll(all);
+}
+
+/** 删除单一 session */
+export function removeSession(id: string) {
+  writeAll(readAll().filter(s => s.id !== id));
+}
+
+/** 清空全部 session（debug 用） */
+export function clearAllSessions() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(ACTIVE_KEY);
+}
+
+/** 列出所有未完成 session */
+export function listInProgressSessions(): PracticeSession[] {
+  return readAll().filter(s => !s.completed);
+}
+
+/** 设置当前进行中的 session */
+export function setActiveSessionId(id: string) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ACTIVE_KEY, id);
+}
+
+/** 取得当前进行中的 session id */
+export function getActiveSessionId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ACTIVE_KEY);
 }
