@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { newSession, Subject, upsertSession, clearSession } from "../../../lib/session";
+import { newSession, Subject, upsertSession, clearAllSessions } from "../../../lib/session";
 import { useRouter } from "next/navigation";
 
 const btn: React.CSSProperties = {
