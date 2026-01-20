@@ -29,8 +29,6 @@ export default function PracticeDebugPage() {
     // 造一个“做到一半”的样子
     s.currentIndex = 5; // 第 6 题
     s.elapsedSec = 125; // 02:05
-    s.correctCount = 3;
-    s.wrongCount = 2;
     s.hintUsed = 1;
     s.paused = false;
     upsertSession(s);
