@@ -60,7 +60,7 @@ function clear() {
           建立 其他 進度
         </button>
 
-        <button onClick={() => clear("英文")} style={btn}>
+        <button onClick={() => clear()} style={btn}>
           清除 英文
         </button>
         <button onClick={() => clear("數學")} style={btn}>
